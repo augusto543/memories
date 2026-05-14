@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =============================================================================
+ * Memories — Design tokens
+ *
+ * Princípio: tudo o que é "tom emocional" mora aqui em HSL puro, sem o prefixo
+ * hsl(), pra compor com transparências do Tailwind. Cores de mood são usadas
+ * por notas, gradientes hero e retrospectiva.
+ * ============================================================================= */
+
+@layer base {
+  :root {
+    --background:         0 0% 100%;
+    --foreground:         240 10% 10%;
+
+    --card:               0 0% 100%;
+    --card-foreground:    240 10% 10%;
+
+    --popover:            0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+
+    --primary:            350 70% 58%;   /* coral / rose */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary:          240 5% 96%;
+    --secondary-foreground: 240 10% 15%;
+
+    --muted:              240 5% 96%;
+    --muted-foreground:   240 4% 46%;
+
+    --accent:             340 80% 92%;
+    --accent-foreground:  340 60% 30%;
+
+    --destructive:        0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:             240 6% 90%;
+    --input:              240 6% 90%;
+    --ring:               350 65% 55%;
+
+    --radius:             0.75rem;
+
+    /* Mood palette — emoções tangíveis */
+    --mood-love:      350 80% 62%;  /* rose vibrante */
+    --mood-longing:   280 50% 60%;  /* lilac saudade */
+    --mood-joy:       35  90% 60%;  /* amber alegria */
+    --mood-calm:      200 50% 60%;  /* sky calma */
+    --mood-nostalgia: 25  60% 55%;  /* warm rust */
+  }
+
+  .dark {
+    --background:         240 12% 4%;
+    --foreground:         0 0% 98%;
+
+    --card:               240 10% 7%;
+    --card-foreground:    0 0% 98%;
+
+    --popover:            240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary:            350 80% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary:          240 6% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted:              240 6% 12%;
+    --muted-foreground:   240 5% 65%;
+
+    --accent:             340 40% 18%;
+    --accent-foreground:  340 80% 88%;
+
+    --destructive:        0 65% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:             240 6% 16%;
+    --input:              240 6% 16%;
+    --ring:               350 75% 62%;
+
+    /* Mood — versões um pouco mais saturadas no dark */
+    --mood-love:      350 85% 68%;
+    --mood-longing:   280 60% 70%;
+    --mood-joy:       35  95% 65%;
+    --mood-calm:      200 60% 68%;
+    --mood-nostalgia: 25  70% 62%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    /* Safe areas iOS PWA */
+    height: -webkit-fill-available;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  /* Scrollbar discreta ----------------------------------------------------- */
+  ::-webkit-scrollbar { @apply w-1.5 h-1.5; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
+
+  /* Selection rosa sutil */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* Glass / glassmorphism leve — para navbars, hero overlays, dialogs ---- */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl backdrop-saturate-150;
+  }
+  .glass-strong {
+    @apply bg-background/80 backdrop-blur-2xl backdrop-saturate-150;
+  }
+  .glass-card {
+    background:
+      linear-gradient(180deg, hsl(var(--card) / 0.9) 0%, hsl(var(--card) / 0.6) 100%);
+    @apply backdrop-blur-xl backdrop-saturate-150 border border-border/60;
+  }
+
+  /* Gradient text — hero / números ---------------------------------------- */
+  .text-gradient {
+    @apply bg-gradient-to-br from-foreground via-foreground to-foreground/50 bg-clip-text text-transparent;
+  }
+  .text-gradient-primary {
+    background: linear-gradient(135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--mood-nostalgia)) 50%,
+      hsl(var(--mood-longing)) 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+  }
+  .text-gradient-sunset {
+    background: linear-gradient(135deg,
+      hsl(var(--mood-joy)) 0%,
+      hsl(var(--primary)) 50%,
+      hsl(var(--mood-love)) 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    -webkit-text-fill-color: transparent;
+            color: transparent;
+  }
+
+  /* Glow halos atrás dos números do hero ---------------------------------- */
+  .glow-primary {
+    box-shadow:
+      0 0 60px hsl(var(--primary) / 0.35),
+      0 0 120px hsl(var(--primary) / 0.18);
+  }
+  .glow-soft::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(circle at center,
+      hsl(var(--primary) / 0.25) 0%,
+      transparent 60%);
+    filter: blur(40px);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  /* Border gradiente sutil ------------------------------------------------ */
+  .border-gradient {
+    position: relative;
+  }
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--border)) 50%,
+      hsl(var(--mood-longing) / 0.3) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Masonry pure-CSS — usado pela timeline ------------------------------- */
+  .masonry { column-gap: 1rem; }
+  @media (min-width: 640px)  { .masonry { column-count: 2; } }
+  @media (min-width: 1024px) { .masonry { column-count: 3; } }
+  .masonry > * {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  /* Shimmer skeleton premium (gradient sweep, não bg só pulsante) -------- */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.12) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  /* Hide scrollbar mantendo scroll funcional ----------------------------- */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Safe-area padding iOS PWA ------------------------------------------- */
+  .pb-safe   { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .pb-safe-0 { padding-bottom: env(safe-area-inset-bottom); }
+  .pt-safe   { padding-top: max(1rem, env(safe-area-inset-top)); }
+  .pt-safe-0 { padding-top: env(safe-area-inset-top); }
+
+  /* Touch feedback delicado em mobile ------------------------------------ */
+  .tap-scale {
+    @apply transition-transform duration-150 ease-out;
+    @apply active:scale-[0.97];
+  }
+
+  /* Stagger helpers: aplicar a um pai e os filhos animam com delay --------*/
+  /* Keyframes inlined: a config do Tailwind tree-shaka @keyframes não usados
+     via animate-*, e a regra abaixo seta opacity:0. Sem o @keyframes presente,
+     a animação nunca roda e os filhos ficam invisíveis. */
+  @keyframes stagger-fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .stagger > * { opacity: 0; animation: stagger-fade-in-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.20s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.28s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.36s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.44s; }
+  .stagger > *:nth-child(7) { animation-delay: 0.52s; }
+  .stagger > *:nth-child(8) { animation-delay: 0.60s; }
+  .stagger > *:nth-child(9) { animation-delay: 0.68s; }
+}

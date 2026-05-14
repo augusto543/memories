@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(grep -oE '[^,{}]*inset-x[^,{}]*\\\\{[^}]*\\\\}' /home/augusto/memories/.next/static/css/app/layout.css)",
+      "Bash(awk 'BEGIN{RS=\"}\"} /inset-x|left-1\\\\\\\\/2|right-auto|translate-x-1\\\\\\\\/2/' /home/augusto/memories/.next/static/css/app/layout.css)"
+    ]
+  }
+}
