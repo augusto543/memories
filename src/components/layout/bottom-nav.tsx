@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Clock, BarChart3, Plus } from "lucide-react";
+import { Sparkles, Clock, BarChart3, Plus, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -16,7 +16,8 @@ const items: NavItem[] = [
   { href: "/home",      label: "Início",   icon: Sparkles },
   { href: "/timeline",  label: "Timeline", icon: Clock },
   { href: "/dates/new", label: "Novo",     icon: Plus },
-  { href: "/dashboard", label: "RESUMOTATUS", icon: BarChart3 },
+  { href: "/notes",     label: "Notas",    icon: StickyNote },
+  { href: "/dashboard", label: "Resumo",   icon: BarChart3 },
 ];
 
 export function BottomNav() {
@@ -34,7 +35,7 @@ export function BottomNav() {
         "md:rounded-3xl md:shadow-2xl md:shadow-black/20",
       )}
     >
-      <ul className="grid grid-cols-4 md:flex md:gap-1 md:px-2 md:py-2">
+      <ul className="grid grid-cols-5 md:flex md:gap-1 md:px-2 md:py-2">
         {items.map((it) => {
           const active =
             pathname === it.href ||

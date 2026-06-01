@@ -6,7 +6,7 @@ export type Mood = (typeof MOOD_VALUES)[number];
 export const moodSchema = z.enum(MOOD_VALUES).nullable().optional();
 
 export const createNoteSchema = z.object({
-  content: z.string().trim().min(1, "Escreva algo").max(500, "Máximo 500 caracteres"),
+  content: z.string().trim().min(1, "Escreva algo").max(1000, "Máximo 1000 caracteres"),
   mood: moodSchema,
 });
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;

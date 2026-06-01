@@ -121,6 +121,45 @@ export async function uploadDraftPhoto(
 }
 
 /**
+ * Define uma foto como capa do encontro. Remove a capa anterior antes de
+ * marcar a nova (índice único parcial garante no máx. 1 capa por encontro).
+ */
+export async function setCoverPhoto(input: {
+  id: string;
+}): Promise<ActionResult> {
+  await requireUser();
+
+  const parsed = photoIdSchema.safeParse(input);
+  if (!parsed.success) return fail("ID inválido");
+
+  const { date_id } = await assertOwnsPhoto(parsed.data.id);
+
+  const supabase = await createClient();
+
+  // 1. Limpa capa anterior do mesmo encontro.
+  await supabase
+    .from("photos")
+    .update({ is_cover: false })
+    .eq("date_id", date_id)
+    .eq("is_cover", true);
+
+  // 2. Marca a nova capa.
+  const { error } = await supabase
+    .from("photos")
+    .update({ is_cover: true })
+    .eq("id", parsed.data.id);
+  if (error) {
+    console.error("[actions/setCoverPhoto]", error);
+    return fail("Erro ao definir capa.");
+  }
+
+  revalidatePath(`/dates/${date_id}`);
+  revalidatePath("/timeline");
+  revalidatePath("/home");
+  return ok(undefined);
+}
+
+/**
  * Deleta uma foto. Apaga do Storage (best-effort) e da tabela.
  */
 export async function deletePhoto(input: {

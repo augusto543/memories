@@ -77,7 +77,7 @@ export default async function DateDetailPage({ params }: PageProps) {
       {date.photoUrls.length > 0 && <PhotoGallery urls={date.photoUrls} />}
 
       {date.description && (
-        <article className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap rounded-2xl border bg-card p-6 text-base leading-relaxed">
+        <article className="prose prose-neutral dark:prose-invert max-w-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] rounded-2xl border bg-card p-6 text-base leading-relaxed">
           {date.description}
         </article>
       )}

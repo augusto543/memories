@@ -21,7 +21,7 @@ export async function getDates(limit = 50): Promise<DateCard[]> {
     .select(
       `
       id, title, description, location, rating, happened_at,
-      photos ( id, storage_path, position ),
+      photos ( id, storage_path, position, is_cover ),
       date_tags ( tag:tags ( id, name ) )
     `,
     )
@@ -36,19 +36,20 @@ export async function getDates(limit = 50): Promise<DateCard[]> {
   if (!data) return [];
 
   type DateWithJoins = Pick<DateRow, "id" | "title" | "description" | "location" | "rating" | "happened_at"> & {
-    photos: Pick<PhotoRow, "id" | "storage_path" | "position">[];
+    photos: Pick<PhotoRow, "id" | "storage_path" | "position" | "is_cover">[];
     date_tags: { tag: Pick<TagRow, "id" | "name"> | null }[];
   };
 
   const rows = data as unknown as DateWithJoins[];
 
-  // Pega URLs assinadas para as capas (1ª foto de cada encontro) em lote.
+  // Capa = foto marcada como is_cover; senão, a primeira (menor position).
   const coverPaths: string[] = [];
   const coverIndexByDateId = new Map<string, number>();
   for (const row of rows) {
-    if (row.photos[0]) {
+    const cover = row.photos.find((p) => p.is_cover) ?? row.photos[0];
+    if (cover) {
       coverIndexByDateId.set(row.id, coverPaths.length);
-      coverPaths.push(row.photos[0].storage_path);
+      coverPaths.push(cover.storage_path);
     }
   }
   const coverUrls = await getSignedUrls(coverPaths);

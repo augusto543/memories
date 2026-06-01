@@ -31,7 +31,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select(
         `
         id, title, description, location, rating, happened_at,
-        photos ( id, storage_path, position ),
+        photos ( id, storage_path, position, is_cover ),
         date_tags ( tag:tags ( id, name ) )
       `,
       )
@@ -62,24 +62,26 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   // Hidrata covers do top 3 em uma só chamada de signed URLs
   type TopRow = Pick<DateRow, "id" | "title" | "description" | "location" | "rating" | "happened_at"> & {
-    photos: Pick<PhotoRow, "id" | "storage_path" | "position">[];
+    photos: Pick<PhotoRow, "id" | "storage_path" | "position" | "is_cover">[];
     date_tags: { tag: Pick<TagRow, "id" | "name"> | null }[];
   };
   const topRows = (topRes.data ?? []) as unknown as TopRow[];
-  const coverPaths = topRows
-    .map((r) => r.photos[0]?.storage_path)
+  // Capa = foto is_cover; senão a primeira (menor position). Igual à timeline.
+  const covers = topRows.map((r) => r.photos.find((p) => p.is_cover) ?? r.photos[0]);
+  const coverPaths = covers
+    .map((c) => c?.storage_path)
     .filter((p): p is string => !!p);
   const coverUrls = await getSignedUrls(coverPaths);
 
   let coverIdx = 0;
-  const topRated: DateCard[] = topRows.map((r) => ({
+  const topRated: DateCard[] = topRows.map((r, i) => ({
     id: r.id,
     title: r.title,
     description: r.description,
     location: r.location,
     rating: r.rating,
     happened_at: r.happened_at,
-    coverUrl: r.photos[0] ? (coverUrls[coverIdx++] ?? null) : null,
+    coverUrl: covers[i] ? (coverUrls[coverIdx++] ?? null) : null,
     photoCount: r.photos.length,
     tags: r.date_tags
       .map((dt) => dt.tag)

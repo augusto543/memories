@@ -37,6 +37,38 @@ export async function createNote(
   return ok(data as NoteRow);
 }
 
+export async function incrementNoteLike(
+  input: { id: string },
+): Promise<ActionResult<{ likes_count: number }>> {
+  const user = await requireUser();
+  const parsed = noteIdSchema.safeParse({ id: input.id });
+  if (!parsed.success) return fail("ID inválido");
+  const supabase = await createClient();
+
+  // Cada clique incrementa permanentemente — sem toggle.
+  const { data: current, error: selErr } = await supabase
+    .from("notes")
+    .select("likes_count")
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id)
+    .single();
+  if (selErr || !current) return fail("Nota não encontrada");
+
+  const next = (current.likes_count ?? 0) + 1;
+  const { error } = await supabase
+    .from("notes")
+    .update({ likes_count: next })
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id);
+  if (error) {
+    console.error("[actions/incrementNoteLike]", error);
+    return fail("Não foi possível curtir.");
+  }
+  revalidatePath("/home");
+  revalidatePath("/notes");
+  return ok({ likes_count: next });
+}
+
 export async function deleteNote(
   input: { id: string },
 ): Promise<ActionResult> {
@@ -54,5 +86,6 @@ export async function deleteNote(
     return fail("Erro ao apagar.");
   }
   revalidatePath("/home");
+  revalidatePath("/notes");
   return ok(undefined);
 }

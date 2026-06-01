@@ -57,7 +57,7 @@ export function NoteComposer() {
 
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value.slice(0, 500))}
+          onChange={(e) => setContent(e.target.value.slice(0, 1000))}
           placeholder="o que você quer guardar agora?"
           rows={2}
           className={cn(
@@ -114,7 +114,7 @@ export function NoteComposer() {
         </div>
 
         <p className="mt-3 text-[10px] text-muted-foreground/70">
-          ⌘ + enter para guardar · {content.length}/500
+          ⌘ + enter para guardar · {content.length}/1000
         </p>
       </div>
     </motion.div>

@@ -1,6 +1,8 @@
 import { getDateById } from "@/lib/queries/dates";
 import { getTags } from "@/lib/queries/tags";
 import { DateForm } from "@/components/dates/date-form";
+import { DatePhotosManager } from "@/components/dates/date-photos-manager";
+import { Label } from "@/components/ui/label";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,6 +33,18 @@ export default async function EditDatePage({ params }: PageProps) {
         }}
         tagSuggestions={tags.map((t) => t.name)}
       />
+
+      <div className="space-y-2 border-t pt-6">
+        <Label>Fotos</Label>
+        <DatePhotosManager
+          dateId={date.id}
+          initial={date.photos.map((p, i) => ({
+            id: p.id,
+            url: date.photoUrls[i] ?? "",
+            isCover: p.is_cover,
+          }))}
+        />
+      </div>
     </div>
   );
 }

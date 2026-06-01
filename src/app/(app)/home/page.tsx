@@ -69,7 +69,7 @@ async function HeroSection() {
 }
 
 async function NotesSection() {
-  const notes = await getRecentNotes(12);
+  const notes = await getRecentNotes(6);
   return <NotesList notes={notes} />;
 }
 

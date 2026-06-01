@@ -36,6 +36,7 @@ export function PhotoUploader({
         );
       }
 
+      const added: UploadedPhoto[] = [];
       for (const file of queue) {
         // valida no client antes de subir
         const parsed = photoFileSchema.safeParse(file);
@@ -52,10 +53,11 @@ export function PhotoUploader({
           continue;
         }
         const previewUrl = URL.createObjectURL(file);
-        onChange([
-          ...value,
-          { path: res.data.path, previewUrl, name: file.name },
-        ]);
+        added.push({ path: res.data.path, previewUrl, name: file.name });
+      }
+
+      if (added.length > 0) {
+        onChange([...value, ...added]);
       }
     } finally {
       setBusy(false);

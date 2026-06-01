@@ -155,6 +155,7 @@ export type Database = {
           user_id: string;
           content: string;
           mood: "love" | "longing" | "joy" | "calm" | "nostalgia" | null;
+          likes_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -163,6 +164,7 @@ export type Database = {
           user_id: string;
           content: string;
           mood?: "love" | "longing" | "joy" | "calm" | "nostalgia" | null;
+          likes_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -171,6 +173,7 @@ export type Database = {
           user_id?: string;
           content?: string;
           mood?: "love" | "longing" | "joy" | "calm" | "nostalgia" | null;
+          likes_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -184,6 +187,7 @@ export type Database = {
           width: number | null;
           height: number | null;
           position: number;
+          is_cover: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -194,6 +198,7 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           position?: number;
+          is_cover?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -204,6 +209,7 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           position?: number;
+          is_cover?: boolean;
           created_at?: string;
           updated_at?: string;
         };

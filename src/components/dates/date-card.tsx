@@ -91,7 +91,7 @@ export function DateCard({ date }: { date: DateCardType }) {
         </div>
 
         {date.description && (
-          <p className="line-clamp-2 text-sm text-muted-foreground italic">
+          <p className="line-clamp-2 text-sm text-muted-foreground italic break-words [overflow-wrap:anywhere]">
             {date.description}
           </p>
         )}
