@@ -27,6 +27,17 @@ export function PhotoUploader({
   );
   const busy = phase !== "idle";
   const inputRef = React.useRef<HTMLInputElement>(null);
+  // objectURLs de preview criados aqui: revogados ao remover a foto e no unmount
+  // (nunca enquanto ainda estão na tela).
+  const previewUrls = React.useRef<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+      urls.clear();
+    };
+  }, []);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -42,35 +53,43 @@ export function PhotoUploader({
 
       const added: UploadedPhoto[] = [];
       for (const file of queue) {
-        // Fotos grandes são comprimidas no browser antes de subir.
-        let upload = file;
-        if (file.size > PHOTO_LIMITS.MAX_BYTES) {
-          setPhase("optimizing");
-          const prepared = await prepareImageForUpload(file);
-          if (!prepared.ok) {
-            toast.error(`${file.name}: ${prepared.error}`);
+        // Cada foto é isolada: uma falha (ou timeout) não interrompe a fila.
+        try {
+          // Fotos grandes são comprimidas no browser antes de subir.
+          let upload = file;
+          if (file.size > PHOTO_LIMITS.MAX_BYTES) {
+            setPhase("optimizing");
+            const prepared = await prepareImageForUpload(file);
+            if (!prepared.ok) {
+              toast.error(`${file.name}: ${prepared.error}`);
+              continue;
+            }
+            upload = prepared.file;
+          }
+          setPhase("uploading");
+
+          // valida no client antes de subir
+          const parsed = photoFileSchema.safeParse(upload);
+          if (!parsed.success) {
+            toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
             continue;
           }
-          upload = prepared.file;
-        }
-        setPhase("uploading");
 
-        // valida no client antes de subir
-        const parsed = photoFileSchema.safeParse(upload);
-        if (!parsed.success) {
-          toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
-          continue;
+          const fd = new FormData();
+          fd.append("file", upload);
+          const res = await uploadDraftPhoto(fd);
+          if (!res.ok) {
+            toast.error(`${file.name}: ${res.error}`);
+            continue;
+          }
+          const previewUrl = URL.createObjectURL(upload);
+          previewUrls.current.add(previewUrl);
+          added.push({ path: res.data.path, previewUrl, name: file.name });
+        } catch {
+          toast.error(`${file.name}: não foi possível enviar essa foto.`);
+        } finally {
+          setPhase("uploading");
         }
-
-        const fd = new FormData();
-        fd.append("file", upload);
-        const res = await uploadDraftPhoto(fd);
-        if (!res.ok) {
-          toast.error(`${file.name}: ${res.error}`);
-          continue;
-        }
-        const previewUrl = URL.createObjectURL(upload);
-        added.push({ path: res.data.path, previewUrl, name: file.name });
       }
 
       if (added.length > 0) {
@@ -83,8 +102,12 @@ export function PhotoUploader({
   }
 
   function remove(path: string) {
-    const next = value.filter((p) => p.path !== path);
-    onChange(next);
+    const target = value.find((p) => p.path === path);
+    onChange(value.filter((p) => p.path !== path));
+    // Só depois de sair da lista: a URL não está mais sendo exibida.
+    if (target && previewUrls.current.delete(target.previewUrl)) {
+      URL.revokeObjectURL(target.previewUrl);
+    }
   }
 
   const canAddMore = value.length < PHOTO_LIMITS.MAX_PER_DATE;

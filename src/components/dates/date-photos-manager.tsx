@@ -42,6 +42,17 @@ export function DatePhotosManager({
   const [pendingRemove, setPendingRemove] = React.useState<string | null>(null);
   const [removing, setRemoving] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  // objectURLs de preview criados aqui: revogados ao remover a foto e no unmount
+  // (nunca enquanto ainda estão na tela).
+  const previewUrls = React.useRef<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    const urls = previewUrls.current;
+    return () => {
+      for (const url of urls) URL.revokeObjectURL(url);
+      urls.clear();
+    };
+  }, []);
 
   const canAddMore = photos.length < PHOTO_LIMITS.MAX_PER_DATE;
 
@@ -61,61 +72,67 @@ export function DatePhotosManager({
     let done = 0;
     const added: ExistingPhoto[] = [];
 
-    for (const file of queue) {
-      // Fotos grandes são comprimidas no browser antes de subir.
-      let upload = file;
-      if (file.size > PHOTO_LIMITS.MAX_BYTES) {
-        setOptimizing(true);
-        const prepared = await prepareImageForUpload(file);
-        setOptimizing(false);
-        if (!prepared.ok) {
-          toast.error(`${file.name}: ${prepared.error}`);
+    try {
+      for (const file of queue) {
+        // Cada foto é isolada: uma falha (ou timeout) não interrompe a fila.
+        try {
+          // Fotos grandes são comprimidas no browser antes de subir.
+          let upload = file;
+          if (file.size > PHOTO_LIMITS.MAX_BYTES) {
+            setOptimizing(true);
+            const prepared = await prepareImageForUpload(file);
+            if (!prepared.ok) {
+              toast.error(`${file.name}: ${prepared.error}`);
+              continue;
+            }
+            upload = prepared.file;
+          }
+          setOptimizing(false);
+
+          const parsed = photoFileSchema.safeParse(upload);
+          if (!parsed.success) {
+            toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
+            continue;
+          }
+
+          const fd = new FormData();
+          fd.append("dateId", dateId);
+          fd.append("file", upload);
+          const res = await uploadPhoto(fd);
+
+          if (!res.ok) {
+            toast.error(`${file.name}: ${res.error}`);
+            continue;
+          }
+          // Preview imediato via objectURL; a URL assinada chega no próximo refresh.
+          const url = URL.createObjectURL(upload);
+          previewUrls.current.add(url);
+          added.push({ id: res.data.id, url, isCover: false });
+        } catch {
+          toast.error(`${file.name}: não foi possível enviar essa foto.`);
+        } finally {
+          setOptimizing(false);
           done += 1;
           setProgress(Math.round((done / queue.length) * 100));
-          continue;
         }
-        upload = prepared.file;
       }
 
-      const parsed = photoFileSchema.safeParse(upload);
-      if (!parsed.success) {
-        toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
-        done += 1;
-        setProgress(Math.round((done / queue.length) * 100));
-        continue;
+      if (added.length > 0) {
+        setPhotos((prev) => [...prev, ...added]);
+        toast.success(
+          added.length === 1
+            ? "Foto adicionada."
+            : `${added.length} fotos adicionadas.`,
+        );
+        router.refresh();
       }
-
-      const fd = new FormData();
-      fd.append("dateId", dateId);
-      fd.append("file", upload);
-      const res = await uploadPhoto(fd);
-      done += 1;
-      setProgress(Math.round((done / queue.length) * 100));
-
-      if (!res.ok) {
-        toast.error(`${file.name}: ${res.error}`);
-        continue;
-      }
-      // Preview imediato via objectURL; a URL assinada chega no próximo refresh.
-      added.push({
-        id: res.data.id,
-        url: URL.createObjectURL(upload),
-        isCover: false,
-      });
+    } finally {
+      // A UI volta ao normal em qualquer cenário — inclusive se algo lançar.
+      setBusy(false);
+      setOptimizing(false);
+      setProgress(0);
+      if (inputRef.current) inputRef.current.value = "";
     }
-
-    if (added.length > 0) {
-      setPhotos((prev) => [...prev, ...added]);
-      toast.success(
-        added.length === 1 ? "Foto adicionada." : `${added.length} fotos adicionadas.`,
-      );
-      router.refresh();
-    }
-
-    setBusy(false);
-    setOptimizing(false);
-    setProgress(0);
-    if (inputRef.current) inputRef.current.value = "";
   }
 
   async function onConfirmRemove() {
@@ -127,8 +144,13 @@ export function DatePhotosManager({
       toast.error(res.error);
       return;
     }
+    const removed = photos.find((p) => p.id === pendingRemove);
     setPhotos((prev) => prev.filter((p) => p.id !== pendingRemove));
     setPendingRemove(null);
+    // Só depois de sair da lista: a URL não está mais sendo exibida.
+    if (removed && previewUrls.current.delete(removed.url)) {
+      URL.revokeObjectURL(removed.url);
+    }
     router.refresh();
   }
 

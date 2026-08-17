@@ -26,6 +26,41 @@ const GENERIC_ERROR =
   "não foi possível otimizar essa foto. Tente escolher outra imagem.";
 const TOO_BIG_ERROR =
   "essa foto é muito grande e não conseguimos reduzir o suficiente. Tente uma imagem menor.";
+const TIMEOUT_ERROR =
+  "essa foto demorou demais para ser processada. Tente escolher outra imagem.";
+
+/** Teto por operação: generoso para celulares lentos, curto o bastante para não travar a fila. */
+const OP_TIMEOUT_MS = 15_000;
+
+class ImageTimeoutError extends Error {}
+
+/**
+ * Safari/iOS pode nunca invocar o callback de `toBlob`/`onload` quando falha a
+ * alocação de memória do canvas. Sem este teto o `await` fica pendente para
+ * sempre e a fila de upload congela sem erro nenhum.
+ */
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new ImageTimeoutError("image operation timed out")),
+      OP_TIMEOUT_MS,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+function errorFor(err: unknown): string {
+  return err instanceof ImageTimeoutError ? TIMEOUT_ERROR : GENERIC_ERROR;
+}
 
 export type PrepareImageResult =
   | { ok: true; file: File; optimized: boolean }
@@ -74,35 +109,46 @@ type DecodedImage = {
 async function decode(file: File): Promise<DecodedImage> {
   if (typeof createImageBitmap === "function") {
     try {
-      const bitmap = await createImageBitmap(file, {
-        imageOrientation: "from-image",
-      });
+      const bitmap = await withTimeout(
+        createImageBitmap(file, { imageOrientation: "from-image" }),
+      );
       return {
         source: bitmap,
         width: bitmap.width,
         height: bitmap.height,
         release: () => bitmap.close(),
       };
-    } catch {
+    } catch (err) {
+      if (err instanceof ImageTimeoutError) throw err;
       // navegador antigo ou formato recusado pelo createImageBitmap: usa <img>
     }
   }
 
   const url = URL.createObjectURL(file);
+  const holder: { el: HTMLImageElement | null } = { el: null };
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new window.Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("decode failed"));
-      el.src = url;
-    });
+    const img = await withTimeout(
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new window.Image();
+        holder.el = image;
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("decode failed"));
+        image.src = url;
+      }),
+    );
     return {
       source: img,
       width: img.naturalWidth || img.width,
       height: img.naturalHeight || img.height,
-      release: () => URL.revokeObjectURL(url),
+      // Solta o bitmap decodificado, não só o objectURL.
+      release: () => {
+        img.removeAttribute("src");
+        URL.revokeObjectURL(url);
+      },
     };
   } catch (err) {
+    // Aborta o decode em andamento para não segurar memória no iOS.
+    holder.el?.removeAttribute("src");
     URL.revokeObjectURL(url);
     throw err;
   }
@@ -113,7 +159,11 @@ function toBlob(
   type: string,
   quality: number,
 ): Promise<Blob | null> {
-  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+  return withTimeout(
+    new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, type, quality),
+    ),
+  );
 }
 
 /**
@@ -132,10 +182,13 @@ export async function prepareImageForUpload(
   let decoded: DecodedImage;
   try {
     decoded = await decode(file);
-  } catch {
-    return { ok: false, error: GENERIC_ERROR };
+  } catch (err) {
+    return { ok: false, error: errorFor(err) };
   }
 
+  // Um único canvas para todas as tentativas: cada resize troca o backing store
+  // em vez de acumular um canvas órfão por passo (estourava a memória no iOS).
+  let canvas: HTMLCanvasElement | null = null;
   try {
     const { source, width, height } = decoded;
     if (!width || !height) return { ok: false, error: GENERIC_ERROR };
@@ -144,12 +197,14 @@ export async function prepareImageForUpload(
     // Proporção preservada: um único fator aplicado nos dois lados.
     const fit = Math.min(1, MAX_DIMENSION / Math.max(width, height));
 
+    canvas = document.createElement("canvas");
+
     for (const scale of SCALE_STEPS) {
       const factor = fit * scale;
       const w = Math.max(1, Math.round(width * factor));
       const h = Math.max(1, Math.round(height * factor));
 
-      const canvas = document.createElement("canvas");
+      // Reatribuir width/height também limpa o canvas para o novo drawImage.
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext("2d");
@@ -175,9 +230,15 @@ export async function prepareImageForUpload(
     }
 
     return { ok: false, error: TOO_BIG_ERROR };
-  } catch {
-    return { ok: false, error: GENERIC_ERROR };
+  } catch (err) {
+    return { ok: false, error: errorFor(err) };
   } finally {
+    // Sempre solta o ImageBitmap/<img> e zera o canvas, inclusive em timeout —
+    // sem isso a foto seguinte já começa sem memória disponível no Safari.
     decoded.release();
+    if (canvas) {
+      canvas.width = 0;
+      canvas.height = 0;
+    }
   }
 }
