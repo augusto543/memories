@@ -13,6 +13,7 @@ import {
   PHOTOS_BUCKET,
   buildStoragePath,
 } from "@/lib/supabase/storage";
+import { PHOTO_LIMITS } from "@/lib/constants";
 
 /**
  * Upload de UMA foto para um encontro existente.
@@ -20,7 +21,7 @@ import {
  *   1. Auth + ownership do dateId
  *   2. Valida arquivo (tipo, tamanho)
  *   3. Upload no Storage usando path { userId/dateId/uuid.ext }
- *   4. INSERT em photos. Trigger enforce_photo_limit_per_date barra se >= 10.
+ *   4. INSERT em photos. Trigger enforce_photo_limit_per_date barra no limite.
  *   5. Em falha do INSERT, remove o arquivo órfão.
  */
 export async function uploadPhoto(
@@ -78,7 +79,7 @@ export async function uploadPhoto(
     await supabase.storage.from(PHOTOS_BUCKET).remove([path]).catch(() => {});
     return fail(
       insErr?.code === "P0001"
-        ? "Limite de 10 fotos por encontro atingido."
+        ? `Limite de ${PHOTO_LIMITS.MAX_PER_DATE} fotos por encontro atingido.`
         : "Erro ao salvar a foto.",
     );
   }

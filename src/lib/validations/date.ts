@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RATING_LIMITS, TEXT_LIMITS } from "@/lib/constants";
+import { PHOTO_LIMITS, RATING_LIMITS, TEXT_LIMITS } from "@/lib/constants";
 
 /**
  * Schema base de um encontro (compartilhado entre create e update).
@@ -64,7 +64,10 @@ export const createDateSchema = z.object({
   ...dateFields,
   photoPaths: z
     .array(z.string().min(1))
-    .max(10, "Máximo 10 fotos por encontro")
+    .max(
+      PHOTO_LIMITS.MAX_PER_DATE,
+      `Máximo ${PHOTO_LIMITS.MAX_PER_DATE} fotos por encontro`,
+    )
     .default([]),
 });
 

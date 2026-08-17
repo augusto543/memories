@@ -5,7 +5,7 @@
  * Trocar aqui significa atualizar nos 3 lugares.
  */
 export const PHOTO_LIMITS = {
-  MAX_PER_DATE: 10,
+  MAX_PER_DATE: 30,
   MAX_BYTES: 5 * 1024 * 1024,
   ALLOWED_MIME_TYPES: ["image/jpeg", "image/png", "image/webp"] as const,
 } as const;
