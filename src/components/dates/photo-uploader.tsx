@@ -6,6 +6,7 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { uploadDraftPhoto } from "@/actions/photos";
 import { PHOTO_LIMITS } from "@/lib/constants";
+import { prepareImageForUpload } from "@/lib/images/prepare-image";
 import { photoFileSchema } from "@/lib/validations/photo";
 
 export interface UploadedPhoto {
@@ -21,12 +22,15 @@ export function PhotoUploader({
   value: UploadedPhoto[];
   onChange: (v: UploadedPhoto[]) => void;
 }) {
-  const [busy, setBusy] = React.useState(false);
+  const [phase, setPhase] = React.useState<"idle" | "optimizing" | "uploading">(
+    "idle",
+  );
+  const busy = phase !== "idle";
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
-    setBusy(true);
+    setPhase("uploading");
     try {
       const available = PHOTO_LIMITS.MAX_PER_DATE - value.length;
       const queue = Array.from(files).slice(0, available);
@@ -38,21 +42,34 @@ export function PhotoUploader({
 
       const added: UploadedPhoto[] = [];
       for (const file of queue) {
+        // Fotos grandes são comprimidas no browser antes de subir.
+        let upload = file;
+        if (file.size > PHOTO_LIMITS.MAX_BYTES) {
+          setPhase("optimizing");
+          const prepared = await prepareImageForUpload(file);
+          if (!prepared.ok) {
+            toast.error(`${file.name}: ${prepared.error}`);
+            continue;
+          }
+          upload = prepared.file;
+        }
+        setPhase("uploading");
+
         // valida no client antes de subir
-        const parsed = photoFileSchema.safeParse(file);
+        const parsed = photoFileSchema.safeParse(upload);
         if (!parsed.success) {
           toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
           continue;
         }
 
         const fd = new FormData();
-        fd.append("file", file);
+        fd.append("file", upload);
         const res = await uploadDraftPhoto(fd);
         if (!res.ok) {
           toast.error(`${file.name}: ${res.error}`);
           continue;
         }
-        const previewUrl = URL.createObjectURL(file);
+        const previewUrl = URL.createObjectURL(upload);
         added.push({ path: res.data.path, previewUrl, name: file.name });
       }
 
@@ -60,7 +77,7 @@ export function PhotoUploader({
         onChange([...value, ...added]);
       }
     } finally {
-      setBusy(false);
+      setPhase("idle");
       if (inputRef.current) inputRef.current.value = "";
     }
   }
@@ -119,14 +136,30 @@ export function PhotoUploader({
             ) : (
               <ImagePlus className="size-5" />
             )}
-            <span className="text-xs">{busy ? "Enviando…" : "Adicionar"}</span>
+            <span className="text-xs">
+              {phase === "optimizing"
+                ? "Otimizando…"
+                : phase === "uploading"
+                  ? "Enviando…"
+                  : "Adicionar"}
+            </span>
           </button>
         )}
       </div>
 
+      {phase === "optimizing" && (
+        <p
+          className="flex items-center gap-1.5 text-xs text-muted-foreground"
+          aria-live="polite"
+        >
+          <Loader2 className="size-3 animate-spin" />
+          Otimizando foto…
+        </p>
+      )}
+
       <p className="text-xs text-muted-foreground">
-        {value.length}/{PHOTO_LIMITS.MAX_PER_DATE} fotos · até{" "}
-        {PHOTO_LIMITS.MAX_BYTES / 1024 / 1024}MB cada · jpg, png, webp
+        {value.length}/{PHOTO_LIMITS.MAX_PER_DATE} fotos · jpg, png, webp ·
+        fotos grandes são otimizadas automaticamente
       </p>
     </div>
   );

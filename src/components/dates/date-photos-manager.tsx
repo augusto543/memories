@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { PHOTO_LIMITS } from "@/lib/constants";
+import { prepareImageForUpload } from "@/lib/images/prepare-image";
 import { photoFileSchema } from "@/lib/validations/photo";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +37,7 @@ export function DatePhotosManager({
   const router = useRouter();
   const [photos, setPhotos] = React.useState<ExistingPhoto[]>(initial);
   const [busy, setBusy] = React.useState(false);
+  const [optimizing, setOptimizing] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [pendingRemove, setPendingRemove] = React.useState<string | null>(null);
   const [removing, setRemoving] = React.useState(false);
@@ -60,7 +62,22 @@ export function DatePhotosManager({
     const added: ExistingPhoto[] = [];
 
     for (const file of queue) {
-      const parsed = photoFileSchema.safeParse(file);
+      // Fotos grandes são comprimidas no browser antes de subir.
+      let upload = file;
+      if (file.size > PHOTO_LIMITS.MAX_BYTES) {
+        setOptimizing(true);
+        const prepared = await prepareImageForUpload(file);
+        setOptimizing(false);
+        if (!prepared.ok) {
+          toast.error(`${file.name}: ${prepared.error}`);
+          done += 1;
+          setProgress(Math.round((done / queue.length) * 100));
+          continue;
+        }
+        upload = prepared.file;
+      }
+
+      const parsed = photoFileSchema.safeParse(upload);
       if (!parsed.success) {
         toast.error(`${file.name}: ${parsed.error.issues[0]?.message}`);
         done += 1;
@@ -70,7 +87,7 @@ export function DatePhotosManager({
 
       const fd = new FormData();
       fd.append("dateId", dateId);
-      fd.append("file", file);
+      fd.append("file", upload);
       const res = await uploadPhoto(fd);
       done += 1;
       setProgress(Math.round((done / queue.length) * 100));
@@ -82,7 +99,7 @@ export function DatePhotosManager({
       // Preview imediato via objectURL; a URL assinada chega no próximo refresh.
       added.push({
         id: res.data.id,
-        url: URL.createObjectURL(file),
+        url: URL.createObjectURL(upload),
         isCover: false,
       });
     }
@@ -96,6 +113,7 @@ export function DatePhotosManager({
     }
 
     setBusy(false);
+    setOptimizing(false);
     setProgress(0);
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -208,16 +226,31 @@ export function DatePhotosManager({
             ) : (
               <ImagePlus className="size-5" />
             )}
-            <span className="text-xs">{busy ? "Enviando…" : "Adicionar"}</span>
+            <span className="text-xs">
+              {optimizing ? "Otimizando…" : busy ? "Enviando…" : "Adicionar"}
+            </span>
           </button>
         )}
       </div>
 
-      {busy && <Progress value={progress} className="h-1.5" />}
+      {busy && (
+        <div className="space-y-1">
+          <Progress value={progress} className="h-1.5" />
+          {optimizing && (
+            <p
+              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+              aria-live="polite"
+            >
+              <Loader2 className="size-3 animate-spin" />
+              Otimizando foto…
+            </p>
+          )}
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground">
         {photos.length}/{PHOTO_LIMITS.MAX_PER_DATE} fotos · toque na estrela para
-        definir a capa · até {PHOTO_LIMITS.MAX_BYTES / 1024 / 1024}MB cada
+        definir a capa · fotos grandes são otimizadas automaticamente
       </p>
 
       <Dialog
