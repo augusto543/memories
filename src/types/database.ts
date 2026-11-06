@@ -20,6 +20,126 @@ export type Database = {
   };
   public: {
     Tables: {
+      special_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          couple_id: string | null;
+          title: string;
+          description: string | null;
+          event_date: string;
+          repeats_annually: boolean;
+          remind_days_before: number | null;
+          is_deleted: boolean;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          couple_id?: string | null;
+          title: string;
+          description?: string | null;
+          event_date: string;
+          repeats_annually?: boolean;
+          remind_days_before?: number | null;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          couple_id?: string | null;
+          title?: string;
+          description?: string | null;
+          event_date?: string;
+          repeats_annually?: boolean;
+          remind_days_before?: number | null;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      weekly_answers: {
+        Row: {
+          id: string;
+          couple_id: string;
+          user_id: string;
+          week_start: string;
+          content: string;
+          is_deleted: boolean;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          couple_id: string;
+          user_id: string;
+          week_start: string;
+          content: string;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          couple_id?: string;
+          user_id?: string;
+          week_start?: string;
+          content?: string;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      couple_comments: {
+        Row: {
+          id: string;
+          couple_id: string;
+          answer_id: string;
+          parent_id: string | null;
+          user_id: string;
+          content: string;
+          is_deleted: boolean;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          couple_id: string;
+          answer_id: string;
+          parent_id?: string | null;
+          user_id: string;
+          content: string;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          couple_id?: string;
+          answer_id?: string;
+          parent_id?: string | null;
+          user_id?: string;
+          content?: string;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       couples: {
         Row: { id: string; created_by: string; created_at: string };
         Insert: { id?: string; created_by: string; created_at?: string };
@@ -268,6 +388,9 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      soft_delete_my_special_event: { Args: { p_event_id: string }; Returns: boolean };
+      soft_delete_my_weekly_answer: { Args: { p_answer_id: string }; Returns: boolean };
+      soft_delete_my_comment: { Args: { p_comment_id: string }; Returns: boolean };
       soft_delete_my_note: { Args: { p_note_id: string }; Returns: boolean };
       soft_delete_my_date: { Args: { p_date_id: string }; Returns: boolean };
       soft_delete_my_photo: { Args: { p_photo_id: string }; Returns: boolean };
@@ -307,3 +430,6 @@ export type PhotoRow   = Tables<"photos">;
 export type TagRow     = Tables<"tags">;
 export type ProfileRow = Tables<"profiles">;
 export type NoteRow    = Tables<"notes">;
+export type SpecialEventRow = Tables<"special_events">;
+export type WeeklyAnswerRow = Tables<"weekly_answers">;
+export type CoupleCommentRow = Tables<"couple_comments">;
