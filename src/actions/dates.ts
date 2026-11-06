@@ -144,25 +144,14 @@ export async function deleteDate(input: { id: string }): Promise<ActionResult> {
 
   const supabase = await createClient();
 
-  // 1. Pega paths das fotos pra limpar do Storage
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("storage_path")
-    .eq("date_id", parsed.data.id);
-
-  if (photos && photos.length > 0) {
-    const paths = photos.map((p) => p.storage_path);
-    await supabase.storage.from(PHOTOS_BUCKET).remove(paths).catch((e) => {
-      // Não falha a action; arquivos órfãos são tratáveis depois.
-      console.error("[actions/deleteDate] storage cleanup", e);
-    });
-  }
-
-  // 2. Delete do encontro — cascade apaga photos rows e date_tags
-  const { error } = await supabase.from("dates").delete().eq("id", parsed.data.id);
+  // Exclusão lógica: preservar fotos e metadados para recuperação administrativa.
+  const { error } = await supabase.from("dates")
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data.id)
+    .eq("is_deleted", false);
   if (error) {
     console.error("[actions/deleteDate]", error);
-    return fail("Erro ao deletar.");
+    return fail("Erro ao ocultar encontro.");
   }
 
   revalidatePath("/home");
