@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getHomeData } from "@/lib/queries/home";
 import { getRecentNotes } from "@/lib/queries/notes";
+import { getDueReminders } from "@/lib/queries/reminders";
 import { HomeBackground } from "@/components/home/home-background";
 import { HeroCountdown } from "@/components/home/hero-countdown";
 import { PremiumStatCard } from "@/components/home/premium-stat-card";
@@ -47,6 +48,10 @@ export default function HomePage() {
             <p className="text-xs text-muted-foreground">Perguntas semanais e conversas do casal.</p>
           </Link>
         </div>
+
+        <Suspense fallback={null}>
+          <HomeReminders />
+        </Suspense>
 
         <section className="space-y-5">
           <SectionTitle eyebrow="momentos" title="nossas notinhas" />
@@ -81,6 +86,25 @@ async function HeroSection() {
       targetAt={data.nextDateAt}
       sinceAt={data.firstDateAt}
     />
+  );
+}
+
+async function HomeReminders() {
+  const reminders = await getDueReminders();
+  if (!reminders.length) return null;
+  return (
+    <section aria-label="Lembretes de datas especiais" className="rounded-2xl border border-primary/30 bg-primary/5 p-5 space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl">Datas chegando 💗</h2>
+        <Link href="/calendar" className="text-sm underline text-primary">Ver calendário</Link>
+      </div>
+      {reminders.slice(0, 3).map((item) => (
+        <p key={item.id} className="text-sm">
+          <strong>{item.title}</strong> — {item.daysUntil === 0
+            ? "é hoje!" : "faltam " + item.daysUntil + (item.daysUntil === 1 ? " dia" : " dias")}
+        </p>
+      ))}
+    </section>
   );
 }
 
