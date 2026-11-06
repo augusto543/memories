@@ -76,15 +76,24 @@ export async function deleteNote(
   const parsed = noteIdSchema.safeParse(input);
   if (!parsed.success) return fail("ID inválido");
   const supabase = await createClient();
-  const { error } = await supabase
+  // Count affected rows without requesting the updated row back.
+  // SELECT RLS intentionally hides notes after they become is_deleted = true.
+  const { error, count } = await supabase
     .from("notes")
-    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .update(
+      { is_deleted: true, deleted_at: new Date().toISOString() },
+      { count: "exact" },
+    )
     .eq("id", parsed.data.id)
-    .eq("is_deleted", false)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("is_deleted", false);
   if (error) {
     console.error("[actions/deleteNote]", error);
-    return fail("Erro ao apagar.");
+    return fail("Não foi possível apagar a nota. Verifique suas permissões.");
+  }
+  if (count !== 1) {
+    console.error("[actions/deleteNote] no rows updated", { count });
+    return fail("Nota não encontrada ou sem permissão para apagar.");
   }
   revalidatePath("/home");
   revalidatePath("/notes");
