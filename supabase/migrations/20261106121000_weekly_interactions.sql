@@ -69,6 +69,26 @@ create policy couple_comments_select_member on public.couple_comments
         and a.is_deleted = false
     )
   );
+-- A definer helper avoids recursive RLS when validating a reply to a comment.
+create function public.can_reply_to_couple_comment(
+  p_parent_id uuid, p_answer_id uuid, p_couple_id uuid
+)
+returns boolean language sql stable security definer set search_path = ''
+as $
+  select public.is_my_couple(p_couple_id) and exists (
+    select 1 from public.couple_comments p
+    where p.id = p_parent_id
+      and p.answer_id = p_answer_id
+      and p.couple_id = p_couple_id
+      and p.parent_id is null
+      and p.is_deleted = false
+  );
+$;
+revoke all on function public.can_reply_to_couple_comment(uuid,uuid,uuid)
+  from public, anon, authenticated;
+grant execute on function public.can_reply_to_couple_comment(uuid,uuid,uuid)
+  to authenticated;
+
 create policy couple_comments_insert_member on public.couple_comments
   for insert to authenticated with check (
     user_id = auth.uid() and is_deleted = false
@@ -78,13 +98,8 @@ create policy couple_comments_insert_member on public.couple_comments
       where a.id = answer_id and a.couple_id = couple_comments.couple_id
         and a.is_deleted = false
     )
-    and (parent_id is null or exists (
-      select 1 from public.couple_comments p
-      where p.id = parent_id
-        and p.answer_id = couple_comments.answer_id
-        and p.couple_id = couple_comments.couple_id
-        and p.parent_id is null
-        and p.is_deleted = false
+    and (parent_id is null or public.can_reply_to_couple_comment(
+      parent_id, answer_id, couple_id
     ))
   );
 create policy couple_comments_update_author on public.couple_comments
