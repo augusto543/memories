@@ -9,6 +9,7 @@ export async function getRecentNotes(limit = 6): Promise<NoteRow[]> {
   const { data, error } = await supabase
     .from("notes")
     .select("*")
+    .eq("is_deleted", false)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
@@ -25,6 +26,7 @@ export async function getAllNotes(limit = 500): Promise<NoteRow[]> {
   const { data, error } = await supabase
     .from("notes")
     .select("*")
+    .eq("is_deleted", false)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
