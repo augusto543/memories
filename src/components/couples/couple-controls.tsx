@@ -14,15 +14,15 @@ export function CoupleControls({ mode, token }: { mode: "create" | "invite" | "a
     try {
       if (mode === "create") {
         const result = await createCouple();
-        if (!result.success) setError(result.error);
+        if (!result.ok) setError(result.error);
         else window.location.reload();
       } else if (mode === "invite") {
         const result = await createCoupleInvite();
-        if (!result.success) setError(result.error);
+        if (!result.ok) setError(result.error);
         else setLink(window.location.origin + result.data.url);
       } else if (token) {
         const result = await acceptCoupleInvite(token, sharePrevious);
-        if (!result.success) setError(result.error);
+        if (!result.ok) setError(result.error);
         else window.location.assign("/couple");
       }
     } catch {
