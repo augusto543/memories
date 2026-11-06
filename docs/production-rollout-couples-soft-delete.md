@@ -14,6 +14,7 @@
    - `supabase/migrations/20261106120400_couple_invitation_rpc.sql`
    - `supabase/migrations/20261106120500_couple_member_read.sql`
    - `supabase/migrations/20261106120600_preserve_storage_files.sql`
+   - `supabase/migrations/20261106120700_soft_delete_date_tags.sql`
 4. Validar os resultados das consultas de verificação abaixo.
 5. Somente depois publicar o código correspondente (merge em `main`); o deploy automático da Vercel deve ser acompanhado.
 
@@ -60,7 +61,7 @@ where pronamespace = 'public'::regnamespace
 ## Pendências de implementação
 
 - Compartilhamento real de `dates`, `notes`, `photos`, tags, RPC de criação, queries e Storage.
-- Exclusão lógica de vínculos `date_tags` (atualmente há DELETE físico na edição de tags).
+- Exclusão lógica de vínculos `date_tags` implementada; exige a migration 20261106120700 antes do deploy.
 - Revisão dos fluxos de limpeza de uploads órfãos e de recuperação administrativa.
 - Executar type-check, testes de migração e regressão antes do merge.
 
