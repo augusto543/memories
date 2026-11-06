@@ -35,6 +35,19 @@ export default function HomePage() {
           <HeroSection />
         </Suspense>
 
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link href="/calendar" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <CalendarDays className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Nosso calendário</h2>
+            <p className="text-xs text-muted-foreground">Datas especiais e lembretes.</p>
+          </Link>
+          <Link href="/interactions" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <MessagesSquare className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Entre nós</h2>
+            <p className="text-xs text-muted-foreground">Perguntas semanais e conversas do casal.</p>
+          </Link>
+        </div>
+
         <section className="space-y-5">
           <SectionTitle eyebrow="momentos" title="nossas notinhas" />
           <NoteComposer />
