@@ -45,10 +45,7 @@ export async function createDate(
 
   if (error || !data) {
     console.error("[actions/createDate] rpc failed", error);
-    // Cleanup best-effort dos arquivos órfãos
-    if (photoPaths.length > 0) {
-      await supabase.storage.from(PHOTOS_BUCKET).remove(photoPaths).catch(() => {});
-    }
+    // Preserve uploaded originals; failed drafts need a future admin cleanup policy.
     return fail(error?.message ?? "Não foi possível criar o encontro.");
   }
 
