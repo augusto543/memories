@@ -12,13 +12,12 @@ import {
   type UpdateDateInput,
 } from "@/lib/validations/date";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
-import { PHOTOS_BUCKET } from "@/lib/supabase/storage";
 
 /**
  * Cria um encontro com tags e fotos em transação única (RPC).
  *
  * As fotos já devem estar uploadadas no Storage; passamos os storage_paths
- * resultantes. Em caso de falha do RPC, removemos os arquivos órfãos.
+ * resultantes. Em caso de falha do RPC, os arquivos são preservados.
  */
 export async function createDate(
   input: CreateDateInput,
@@ -130,8 +129,7 @@ export async function updateDate(
 }
 
 /**
- * Deleta um encontro e todas as suas fotos do Storage.
- * Order: storage primeiro (best-effort) → DB (cascade apaga fotos/tags).
+ * Oculta um encontro por exclusão lógica; preserva fotos e tags no banco.
  */
 export async function deleteDate(input: { id: string }): Promise<ActionResult> {
   await requireUser();
