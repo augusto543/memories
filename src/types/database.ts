@@ -136,6 +136,8 @@ export type Database = {
       };
       date_tags: {
         Row: {
+          is_deleted: boolean;
+          deleted_at: string | null;
           id: string;
           date_id: string;
           tag_id: string;
@@ -143,6 +145,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           date_id: string;
           tag_id: string;
@@ -150,6 +154,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           date_id?: string;
           tag_id?: string;
