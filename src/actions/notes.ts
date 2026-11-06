@@ -78,8 +78,9 @@ export async function deleteNote(
   const supabase = await createClient();
   const { error } = await supabase
     .from("notes")
-    .delete()
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
     .eq("id", parsed.data.id)
+    .eq("is_deleted", false)
     .eq("user_id", user.id);
   if (error) {
     console.error("[actions/deleteNote]", error);

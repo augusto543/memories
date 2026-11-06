@@ -45,10 +45,7 @@ export async function createDate(
 
   if (error || !data) {
     console.error("[actions/createDate] rpc failed", error);
-    // Cleanup best-effort dos arquivos órfãos
-    if (photoPaths.length > 0) {
-      await supabase.storage.from(PHOTOS_BUCKET).remove(photoPaths).catch(() => {});
-    }
+    // Preserve uploaded originals; failed drafts need a future admin cleanup policy.
     return fail(error?.message ?? "Não foi possível criar o encontro.");
   }
 
@@ -96,30 +93,32 @@ export async function updateDate(
     return fail("Erro ao atualizar.");
   }
 
-  // 2. Sincronia das tags: estratégia replace
-  //    Apaga associações atuais e refaz com a lista nova (com upsert dos nomes).
+  // Preserve previous tag links; reactivate matching links when editing.
   if (Array.isArray(tags)) {
-    const { error: delErr } = await supabase.from("date_tags").delete().eq("date_id", id);
-    if (delErr) {
-      console.error("[actions/updateDate] clear tags", delErr);
-      return fail("Erro ao sincronizar tags.");
-    }
+    const { data: current, error: currentErr } = await supabase
+      .from("date_tags").select("id, tag_id").eq("date_id", id);
+    if (currentErr) return fail("Erro ao carregar tags.");
 
+    const desiredIds = new Set<string>();
     for (const name of tags) {
       const { data: tag, error: tagErr } = await supabase
         .from("tags")
         .upsert({ user_id: user.id, name }, { onConflict: "user_id,name" })
-        .select("id")
-        .single();
-      if (tagErr || !tag) {
-        console.error("[actions/updateDate] upsert tag", tagErr);
-        continue;
+        .select("id").single();
+      if (tagErr || !tag) return fail("Erro ao salvar tag.");
+      desiredIds.add(tag.id);
+      const { error: linkErr } = await supabase.from("date_tags")
+        .upsert({ date_id: id, tag_id: tag.id, is_deleted: false, deleted_at: null },
+          { onConflict: "date_id,tag_id" });
+      if (linkErr) return fail("Erro ao associar tag.");
+    }
+    for (const link of current ?? []) {
+      if (!desiredIds.has(link.tag_id)) {
+        const { error: hideErr } = await supabase.from("date_tags")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+          .eq("id", link.id);
+        if (hideErr) return fail("Erro ao ocultar tag.");
       }
-      await supabase
-        .from("date_tags")
-        .insert({ date_id: id, tag_id: tag.id })
-        .select()
-        .single();
     }
   }
 
@@ -144,25 +143,14 @@ export async function deleteDate(input: { id: string }): Promise<ActionResult> {
 
   const supabase = await createClient();
 
-  // 1. Pega paths das fotos pra limpar do Storage
-  const { data: photos } = await supabase
-    .from("photos")
-    .select("storage_path")
-    .eq("date_id", parsed.data.id);
-
-  if (photos && photos.length > 0) {
-    const paths = photos.map((p) => p.storage_path);
-    await supabase.storage.from(PHOTOS_BUCKET).remove(paths).catch((e) => {
-      // Não falha a action; arquivos órfãos são tratáveis depois.
-      console.error("[actions/deleteDate] storage cleanup", e);
-    });
-  }
-
-  // 2. Delete do encontro — cascade apaga photos rows e date_tags
-  const { error } = await supabase.from("dates").delete().eq("id", parsed.data.id);
+  // Exclusão lógica: preservar fotos e metadados para recuperação administrativa.
+  const { error } = await supabase.from("dates")
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+    .eq("id", parsed.data.id)
+    .eq("is_deleted", false);
   if (error) {
     console.error("[actions/deleteDate]", error);
-    return fail("Erro ao deletar.");
+    return fail("Erro ao ocultar encontro.");
   }
 
   revalidatePath("/home");

@@ -26,11 +26,12 @@ export async function getHomeData(): Promise<HomeStats> {
   const supabase = await createClient();
 
   const [datesRes, photosCountRes, tagsRes] = await Promise.all([
-    supabase.from("dates").select("id, title, rating, location, happened_at"),
-    supabase.from("photos").select("id", { count: "exact", head: true }),
+    supabase.from("dates").select("id, title, rating, location, happened_at").eq("is_deleted", false),
+    supabase.from("photos").select("id", { count: "exact", head: true }).eq("is_deleted", false),
     supabase
       .from("date_tags")
-      .select("tag:tags ( name )"),
+      .select("tag:tags ( name )")
+      .eq("is_deleted", false),
   ]);
 
   const dates = datesRes.data ?? [];

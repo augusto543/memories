@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import { Heart, LogOut } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -49,6 +50,10 @@ export async function UserMenu() {
             </span>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/couple"><Heart className="size-4" /><span>Nosso espaço</span></Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <form action={signOut}>
           <button type="submit" className="w-full">
