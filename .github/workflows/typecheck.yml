@@ -2,7 +2,7 @@ name: Validate TypeScript
 
 on:
   push:
-    branches: [feat/calendar-couple-interactions]
+    branches: [feat/calendar-couple-interactions, feat/dreams-retrospectives]
   pull_request:
     branches: [main]
 
