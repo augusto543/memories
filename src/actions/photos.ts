@@ -171,23 +171,23 @@ export async function deletePhoto(input: {
   const parsed = photoIdSchema.safeParse(input);
   if (!parsed.success) return fail("ID inválido");
 
-  // Pega path + date_id e ao mesmo tempo valida ownership transitivo.
+  // Necessário para revalidar a página do encontro após a operação.
   const { date_id } = await assertOwnsPhoto(parsed.data.id);
 
   const supabase = await createClient();
-  const { error } = await supabase.from("photos")
-    .update({ is_deleted: true, deleted_at: new Date().toISOString(), is_cover: false })
-    .eq("id", parsed.data.id)
-    .eq("is_deleted", false);
+  const { data: deleted, error } = await supabase.rpc("soft_delete_my_photo", {
+    p_photo_id: parsed.data.id,
+  });
   if (error) {
-    console.error("[actions/deletePhoto]", error);
-    return fail("Erro ao remover foto.");
+    console.error("[actions/deletePhoto] RPC failed", error);
+    return fail("Não foi possível remover a foto. Verifique a migration de exclusão lógica.");
   }
+  if (!deleted) return fail("Foto não encontrada ou sem permissão para apagar.");
 
-  // O arquivo permanece no Storage para eventual recuperação.
-
+  // A foto continua no Storage para eventual recuperação.
   revalidatePath(`/dates/${date_id}`);
   revalidatePath("/timeline");
   revalidatePath("/home");
+  revalidatePath("/dashboard");
   return ok(undefined);
 }
