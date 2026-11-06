@@ -93,30 +93,32 @@ export async function updateDate(
     return fail("Erro ao atualizar.");
   }
 
-  // 2. Sincronia das tags: estratégia replace
-  //    Apaga associações atuais e refaz com a lista nova (com upsert dos nomes).
+  // Preserve previous tag links; reactivate matching links when editing.
   if (Array.isArray(tags)) {
-    const { error: delErr } = await supabase.from("date_tags").delete().eq("date_id", id);
-    if (delErr) {
-      console.error("[actions/updateDate] clear tags", delErr);
-      return fail("Erro ao sincronizar tags.");
-    }
+    const { data: current, error: currentErr } = await supabase
+      .from("date_tags").select("id, tag_id").eq("date_id", id);
+    if (currentErr) return fail("Erro ao carregar tags.");
 
+    const desiredIds = new Set<string>();
     for (const name of tags) {
       const { data: tag, error: tagErr } = await supabase
         .from("tags")
         .upsert({ user_id: user.id, name }, { onConflict: "user_id,name" })
-        .select("id")
-        .single();
-      if (tagErr || !tag) {
-        console.error("[actions/updateDate] upsert tag", tagErr);
-        continue;
+        .select("id").single();
+      if (tagErr || !tag) return fail("Erro ao salvar tag.");
+      desiredIds.add(tag.id);
+      const { error: linkErr } = await supabase.from("date_tags")
+        .upsert({ date_id: id, tag_id: tag.id, is_deleted: false, deleted_at: null },
+          { onConflict: "date_id,tag_id" });
+      if (linkErr) return fail("Erro ao associar tag.");
+    }
+    for (const link of current ?? []) {
+      if (!desiredIds.has(link.tag_id)) {
+        const { error: hideErr } = await supabase.from("date_tags")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+          .eq("id", link.id);
+        if (hideErr) return fail("Erro ao ocultar tag.");
       }
-      await supabase
-        .from("date_tags")
-        .insert({ date_id: id, tag_id: tag.id })
-        .select()
-        .single();
     }
   }
 
