@@ -41,6 +41,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .not("rating", "is", null)
       .order("rating", { ascending: false })
       .order("happened_at", { ascending: false })
+      .eq("photos.is_deleted", false)
       .order("position", { foreignTable: "photos", ascending: true })
       .limit(3),
   ]);
