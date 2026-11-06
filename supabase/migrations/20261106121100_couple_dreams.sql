@@ -1,7 +1,8 @@
 -- Sonhos e experiências do casal. RLS restringe a membros atuais.
+-- Reexecutável após uma execução incompleta no SQL Editor (sem apagar dados).
 -- Depende de public.couples, public.is_my_couple(uuid) e public.set_updated_at().
 -- Nenhum registro existente de datas/notas é compartilhado por esta migration.
-create table public.couple_dreams (
+create table if not exists public.couple_dreams (
   id uuid primary key default gen_random_uuid(),
   couple_id uuid not null references public.couples(id),
   created_by uuid not null references auth.users(id),
@@ -21,10 +22,11 @@ create table public.couple_dreams (
 
 comment on table public.couple_dreams is
   'Lista compartilhada de sonhos. Só membros atuais do casal podem consultar e editar. Exclusões são lógicas.';
-create index couple_dreams_active_couple_idx
+create index if not exists couple_dreams_active_couple_idx
   on public.couple_dreams(couple_id, status, created_at desc)
   where is_deleted = false;
 
+drop trigger if exists trg_couple_dreams_updated_at on public.couple_dreams;
 create trigger trg_couple_dreams_updated_at
   before update on public.couple_dreams
   for each row execute function public.set_updated_at();
@@ -32,7 +34,7 @@ create trigger trg_couple_dreams_updated_at
 -- Sempre gerenciar a data de conclusão no banco; não confiar no cliente.
 -- A policy UPDATE bloqueia is_deleted=true para clientes; a RPC autorizada
 -- pode marcar a exclusão, pois executa como proprietário da função.
-create function public.couple_dreams_guard()
+create or replace function public.couple_dreams_guard()
 returns trigger language plpgsql set search_path = ''
 as $$
 begin
@@ -60,16 +62,19 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_couple_dreams_guard on public.couple_dreams;
 create trigger trg_couple_dreams_guard
   before insert or update on public.couple_dreams
   for each row execute function public.couple_dreams_guard();
 
 alter table public.couple_dreams enable row level security;
 
+drop policy if exists couple_dreams_select_member on public.couple_dreams;
 create policy couple_dreams_select_member on public.couple_dreams
   for select to authenticated
   using (is_deleted = false and public.is_my_couple(couple_id));
 
+drop policy if exists couple_dreams_insert_member on public.couple_dreams;
 create policy couple_dreams_insert_member on public.couple_dreams
   for insert to authenticated
   with check (
@@ -79,13 +84,14 @@ create policy couple_dreams_insert_member on public.couple_dreams
     and public.is_my_couple(couple_id)
   );
 
+drop policy if exists couple_dreams_update_member on public.couple_dreams;
 create policy couple_dreams_update_member on public.couple_dreams
   for update to authenticated
   using (is_deleted = false and public.is_my_couple(couple_id))
   with check (is_deleted = false and public.is_my_couple(couple_id));
 
 -- Sem policy DELETE. Exclusão lógica feita por função com verificação no banco.
-create function public.soft_delete_couple_dream(p_dream_id uuid)
+create or replace function public.soft_delete_couple_dream(p_dream_id uuid)
 returns boolean
 language plpgsql security definer set search_path = ''
 as $$
