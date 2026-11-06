@@ -137,19 +137,16 @@ export async function deleteDate(input: { id: string }): Promise<ActionResult> {
   const parsed = dateIdSchema.safeParse(input);
   if (!parsed.success) return fail("ID inválido");
 
-  await assertOwnsDate(parsed.data.id);
-
   const supabase = await createClient();
-
-  // Exclusão lógica: preservar fotos e metadados para recuperação administrativa.
-  const { error } = await supabase.from("dates")
-    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-    .eq("id", parsed.data.id)
-    .eq("is_deleted", false);
+  // Apenas o proprietário pode ocultar o encontro; fotos e tags são preservadas.
+  const { data: deleted, error } = await supabase.rpc("soft_delete_my_date", {
+    p_date_id: parsed.data.id,
+  });
   if (error) {
-    console.error("[actions/deleteDate]", error);
-    return fail("Erro ao ocultar encontro.");
+    console.error("[actions/deleteDate] RPC failed", error);
+    return fail("Não foi possível ocultar o encontro. Verifique a migration de exclusão lógica.");
   }
+  if (!deleted) return fail("Encontro não encontrado ou sem permissão para apagar.");
 
   revalidatePath("/home");
   revalidatePath("/timeline");
