@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import {
   Calendar,
+  CalendarDays,
+  MessagesSquare,
   Camera,
   Hash,
   Heart,
