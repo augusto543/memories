@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import {
   Calendar,
+  CalendarDays,
+  MessagesSquare,
   Camera,
   Hash,
   Heart,
@@ -12,6 +15,7 @@ import {
 } from "lucide-react";
 import { getHomeData } from "@/lib/queries/home";
 import { getRecentNotes } from "@/lib/queries/notes";
+import { getDueReminders } from "@/lib/queries/reminders";
 import { HomeBackground } from "@/components/home/home-background";
 import { HeroCountdown } from "@/components/home/hero-countdown";
 import { PremiumStatCard } from "@/components/home/premium-stat-card";
@@ -30,6 +34,23 @@ export default function HomePage() {
       <div className="space-y-16 md:space-y-24 pt-2 md:pt-6">
         <Suspense fallback={<HeroSkeleton />}>
           <HeroSection />
+        </Suspense>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link href="/calendar" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <CalendarDays className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Nosso calendário</h2>
+            <p className="text-xs text-muted-foreground">Datas especiais e lembretes.</p>
+          </Link>
+          <Link href="/interactions" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <MessagesSquare className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Entre nós</h2>
+            <p className="text-xs text-muted-foreground">Perguntas semanais e conversas do casal.</p>
+          </Link>
+        </div>
+
+        <Suspense fallback={null}>
+          <HomeReminders />
         </Suspense>
 
         <section className="space-y-5">
@@ -65,6 +86,25 @@ async function HeroSection() {
       targetAt={data.nextDateAt}
       sinceAt={data.firstDateAt}
     />
+  );
+}
+
+async function HomeReminders() {
+  const reminders = await getDueReminders();
+  if (!reminders.length) return null;
+  return (
+    <section aria-label="Lembretes de datas especiais" className="rounded-2xl border border-primary/30 bg-primary/5 p-5 space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl">Datas chegando 💗</h2>
+        <Link href="/calendar" className="text-sm underline text-primary">Ver calendário</Link>
+      </div>
+      {reminders.slice(0, 3).map((item) => (
+        <p key={item.id} className="text-sm">
+          <strong>{item.title}</strong> — {item.daysUntil === 0
+            ? "é hoje!" : "faltam " + item.daysUntil + (item.daysUntil === 1 ? " dia" : " dias")}
+        </p>
+      ))}
+    </section>
   );
 }
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Clock, BarChart3, Plus, StickyNote } from "lucide-react";
+import { Sparkles, Clock, CalendarDays, MessagesSquare, Plus, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -15,9 +15,10 @@ interface NavItem {
 const items: NavItem[] = [
   { href: "/home",      label: "Início",   icon: Sparkles },
   { href: "/timeline",  label: "Timeline", icon: Clock },
+  { href: "/calendar",  label: "Datas",    icon: CalendarDays },
   { href: "/dates/new", label: "Novo",     icon: Plus },
   { href: "/notes",     label: "Notas",    icon: StickyNote },
-  { href: "/dashboard", label: "Resumo",   icon: BarChart3 },
+  { href: "/interactions", label: "Entre nós", icon: MessagesSquare },
 ];
 
 export function BottomNav() {
@@ -35,7 +36,7 @@ export function BottomNav() {
         "md:rounded-3xl md:shadow-2xl md:shadow-black/20",
       )}
     >
-      <ul className="grid grid-cols-5 md:flex md:gap-1 md:px-2 md:py-2">
+      <ul className="grid grid-cols-6 md:flex md:gap-1 md:px-2 md:py-2">
         {items.map((it) => {
           const active =
             pathname === it.href ||
@@ -49,7 +50,7 @@ export function BottomNav() {
                 href={it.href}
                 className={cn(
                   "flex flex-col items-center justify-center gap-1 px-2 py-2 text-[10px] tap-scale",
-                  "md:px-4 md:rounded-2xl",
+                  "md:px-3 md:rounded-2xl",
                   "transition-colors duration-300",
                   active ? "text-primary" : "text-muted-foreground",
                 )}

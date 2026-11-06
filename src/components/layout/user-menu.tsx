@@ -1,4 +1,4 @@
-import { Heart, LogOut } from "lucide-react";
+import { BarChart3, Heart, LogOut } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/actions/auth";
@@ -53,6 +53,9 @@ export async function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/couple"><Heart className="size-4" /><span>Nosso espaço</span></Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard"><BarChart3 className="size-4" /><span>Resumo</span></Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <form action={signOut}>
