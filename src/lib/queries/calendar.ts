@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
+import { FeatureMigrationPendingError, isMissingFeatureTable } from "@/lib/queries/migration-status";
 import { todayInAppTimeZone } from "@/lib/calendar";
 import type { SpecialEventRow } from "@/types/database";
 
@@ -35,6 +36,7 @@ export async function getCalendarData(): Promise<{
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
+  if (isMissingFeatureTable(eventsRes.error)) throw new FeatureMigrationPendingError();
   if (eventsRes.error) {
     console.error("[queries/getCalendarData] events", eventsRes.error);
     throw new Error("Não foi possível carregar as datas especiais.");
