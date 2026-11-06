@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronLeft, ChevronRight, Heart, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { saveSpecialEvent, deleteSpecialEvent } from "@/actions/calendar";
 import { cn } from "@/lib/utils";
 import {
-  addCalendarDays, dayDifference, encounterLocalDay,
+  dayDifference, encounterLocalDay,
   nextOccurrence, occurrenceInYear, toDateOnlyUTC,
 } from "@/lib/calendar";
 import type { SpecialEventRow } from "@/types/database";
