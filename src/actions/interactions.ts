@@ -46,6 +46,7 @@ export async function saveWeeklyAnswer(input: { content: string }): Promise<Acti
     .maybeSingle();
   if (selectError) return fail("Não foi possível consultar sua resposta.");
 
+  let savedId = current?.id ?? "";
   if (current) {
     const { data, error } = await supabase
       .from("weekly_answers")
@@ -59,22 +60,23 @@ export async function saveWeeklyAnswer(input: { content: string }): Promise<Acti
       return fail("Não foi possível atualizar sua resposta.");
     }
   } else {
-    const { error } = await supabase.from("weekly_answers").insert({
+    const { data: created, error } = await supabase.from("weekly_answers").insert({
       couple_id: coupleId,
       user_id: user.id,
       week_start: weekStart,
       content: parsed.data.content,
-    });
-    if (error) {
+    }).select("id").single();
+    if (error || !created) {
       console.error("[actions/saveWeeklyAnswer] insert", error);
-      return fail(error.code === "23505"
+      return fail(error?.code === "23505"
         ? "Você já respondeu nesta semana. Atualize a página para editar."
         : "Não foi possível enviar sua resposta.");
     }
+    savedId = created.id;
   }
 
   revalidatePath("/interactions");
-  return ok({ id: current?.id ?? "" });
+  return ok({ id: savedId });
 }
 
 export async function addCoupleComment(input: {
