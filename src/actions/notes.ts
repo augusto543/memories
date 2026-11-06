@@ -72,29 +72,22 @@ export async function incrementNoteLike(
 export async function deleteNote(
   input: { id: string },
 ): Promise<ActionResult> {
-  const user = await requireUser();
+  await requireUser();
   const parsed = noteIdSchema.safeParse(input);
   if (!parsed.success) return fail("ID inválido");
+
   const supabase = await createClient();
-  // Count affected rows without requesting the updated row back.
-  // SELECT RLS intentionally hides notes after they become is_deleted = true.
-  const { error, count } = await supabase
-    .from("notes")
-    .update(
-      { is_deleted: true, deleted_at: new Date().toISOString() },
-      { count: "exact" },
-    )
-    .eq("id", parsed.data.id)
-    .eq("user_id", user.id)
-    .eq("is_deleted", false);
+  // A RPC verifica auth.uid() e a propriedade da nota no próprio banco.
+  // Evita conflito com a política SELECT que esconde notas excluídas.
+  const { data: deleted, error } = await supabase.rpc("soft_delete_my_note", {
+    p_note_id: parsed.data.id,
+  });
   if (error) {
-    console.error("[actions/deleteNote]", error);
-    return fail("Não foi possível apagar a nota. Verifique suas permissões.");
+    console.error("[actions/deleteNote] RPC failed", error);
+    return fail("Não foi possível apagar a nota. Verifique se a migration de exclusão lógica foi aplicada.");
   }
-  if (count !== 1) {
-    console.error("[actions/deleteNote] no rows updated", { count });
-    return fail("Nota não encontrada ou sem permissão para apagar.");
-  }
+  if (!deleted) return fail("Nota não encontrada ou sem permissão para apagar.");
+
   revalidatePath("/home");
   revalidatePath("/notes");
   return ok(undefined);
