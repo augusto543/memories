@@ -118,6 +118,8 @@ export async function getDateById(id: string): Promise<DateWithRelations> {
   return {
     id: row.id,
     user_id: row.user_id,
+    is_deleted: row.is_deleted,
+    deleted_at: row.deleted_at,
     title: row.title,
     description: row.description,
     location: row.location,
