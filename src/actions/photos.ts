@@ -76,7 +76,7 @@ export async function uploadPhoto(
 
   if (insErr || !row) {
     console.error("[actions/uploadPhoto] db insert", insErr);
-    await supabase.storage.from(PHOTOS_BUCKET).remove([path]).catch(() => {});
+    // Preserve the uploaded file; do not physically delete it.
     return fail(
       insErr?.code === "P0001"
         ? `Limite de ${PHOTO_LIMITS.MAX_PER_DATE} fotos por encontro atingido.`
