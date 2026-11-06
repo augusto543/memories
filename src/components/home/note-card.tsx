@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,7 +22,9 @@ import { cn } from "@/lib/utils";
 import type { NoteRow } from "@/types/database";
 
 export function NoteCard({ note }: { note: NoteRow }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
+  const [deleted, setDeleted] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [count, setCount] = useState(note.likes_count ?? 0);
   // Retrigger da animação do coração a cada clique (sem toggle).
@@ -56,8 +59,12 @@ export function NoteCard({ note }: { note: NoteRow }) {
         return;
       }
       setConfirmOpen(false);
+      setDeleted(true);
+      router.refresh();
     });
   }
+
+  if (deleted) return null;
 
   return (
     <motion.article
@@ -130,7 +137,7 @@ export function NoteCard({ note }: { note: NoteRow }) {
           onClick={() => setConfirmOpen(true)}
           disabled={pending}
           aria-label="Apagar nota"
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded-full hover:bg-destructive/10 hover:text-destructive"
+          className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 rounded-full hover:bg-destructive/10 hover:text-destructive"
         >
           <X className="size-3.5" />
         </button>
@@ -141,7 +148,7 @@ export function NoteCard({ note }: { note: NoteRow }) {
           <DialogHeader>
             <DialogTitle>Apagar nota?</DialogTitle>
             <DialogDescription>
-              Esta ação não pode ser desfeita.
+              A nota será ocultada, mas poderá ser recuperada por um administrador.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
