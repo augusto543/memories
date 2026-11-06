@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/require-user";
+import { FeatureMigrationPendingError, isMissingFeatureTable } from "@/lib/queries/migration-status";
 import { addCalendarDays, todayInAppTimeZone, mondayOfWeek } from "@/lib/calendar";
 import { questionForWeek } from "@/lib/weekly-questions";
 import type { CoupleCommentRow, WeeklyAnswerRow } from "@/types/database";
@@ -45,6 +46,7 @@ export async function getInteractionsData(): Promise<{
     .order("week_start", { ascending: false })
     .order("created_at", { ascending: true })
     .limit(100);
+  if (isMissingFeatureTable(answerError)) throw new FeatureMigrationPendingError();
   if (answerError) {
     console.error("[queries/getInteractionsData] answers", answerError);
     throw new Error("Não foi possível carregar as respostas.");
