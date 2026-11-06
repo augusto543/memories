@@ -30,7 +30,8 @@ export async function getHomeData(): Promise<HomeStats> {
     supabase.from("photos").select("id", { count: "exact", head: true }).eq("is_deleted", false),
     supabase
       .from("date_tags")
-      .select("tag:tags ( name )"),
+      .select("tag:tags ( name )")
+      .eq("is_deleted", false),
   ]);
 
   const dates = datesRes.data ?? [];
