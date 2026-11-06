@@ -25,6 +25,7 @@ export async function getDates(limit = 50): Promise<DateCard[]> {
       date_tags ( tag:tags ( id, name ) )
     `,
     )
+    .eq("is_deleted", false)
     .order("happened_at", { ascending: false })
     .order("position", { foreignTable: "photos", ascending: true })
     .limit(limit);
@@ -90,6 +91,7 @@ export async function getDateById(id: string): Promise<DateWithRelations> {
     `,
     )
     .eq("id", id)
+    .eq("is_deleted", false)
     .order("position", { foreignTable: "photos", ascending: true })
     .maybeSingle();
 
