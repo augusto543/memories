@@ -20,11 +20,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     // Todos os dates pra computar agregados básicos
     supabase
       .from("dates")
-      .select("id, rating, location, happened_at"),
+      .select("id, rating, location, happened_at")
+      .eq("is_deleted", false),
     // Contagem de fotos (head: true só conta, não traz rows)
     supabase
       .from("photos")
-      .select("id", { count: "exact", head: true }),
+      .select("id", { count: "exact", head: true })
+      .eq("is_deleted", false),
     // Top 3 mais bem avaliados, com capa
     supabase
       .from("dates")
@@ -35,6 +37,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         date_tags ( tag:tags ( id, name ) )
       `,
       )
+      .eq("is_deleted", false)
       .not("rating", "is", null)
       .order("rating", { ascending: false })
       .order("happened_at", { ascending: false })
