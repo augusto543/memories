@@ -172,19 +172,19 @@ export async function deletePhoto(input: {
   if (!parsed.success) return fail("ID inválido");
 
   // Pega path + date_id e ao mesmo tempo valida ownership transitivo.
-  const { storage_path, date_id } = await assertOwnsPhoto(parsed.data.id);
+  const { date_id } = await assertOwnsPhoto(parsed.data.id);
 
   const supabase = await createClient();
-  const { error } = await supabase.from("photos").delete().eq("id", parsed.data.id);
+  const { error } = await supabase.from("photos")
+    .update({ is_deleted: true, deleted_at: new Date().toISOString(), is_cover: false })
+    .eq("id", parsed.data.id)
+    .eq("is_deleted", false);
   if (error) {
     console.error("[actions/deletePhoto]", error);
     return fail("Erro ao remover foto.");
   }
 
-  await supabase.storage
-    .from(PHOTOS_BUCKET)
-    .remove([storage_path])
-    .catch((e) => console.error("[actions/deletePhoto] storage", e));
+  // O arquivo permanece no Storage para eventual recuperação.
 
   revalidatePath(`/dates/${date_id}`);
   revalidatePath("/timeline");
