@@ -13,8 +13,8 @@ function abbreviate(text: string, max: number): string {
 
 export function buildRetrospectiveSvg(data: RetrospectiveData): string {
   const label = escapeXml(abbreviate(data.label, 42));
-  const highlight = escapeXml(abbreviate(data.bestMoment?.title ?? "Cada momento merece ser lembrado.", 58));
-  const city = escapeXml(abbreviate(data.topCity ?? "Muitos lugares para descobrir", 46));
+  const highlight = escapeXml(abbreviate(data.bestMoment?.title ?? "Cada momento merece ser lembrado.", 39));
+  const city = escapeXml(abbreviate(data.topCity ?? "Muitos lugares para descobrir", 22));
   const rating = data.averageRating === null ? "—" : data.averageRating.toFixed(1).replace(".", ",");
   const numbers: { x: number; value: string; label: string }[] = [
     { x: 180, value: String(data.totalDates), label: "encontros" },
@@ -49,7 +49,7 @@ export function buildRetrospectiveSvg(data: RetrospectiveData): string {
   <line x1="120" y1="831" x2="960" y2="831" stroke="#e7b9b2" stroke-opacity=".55"/>
   ${statMarkup}
   <text x="540" y="928" text-anchor="middle" fill="#f6c9c3" font-family="Arial,sans-serif" font-size="26" letter-spacing="3">MOMENTO MARCANTE</text>
-  <text x="540" y="990" text-anchor="middle" fill="#fff8ed" font-family="Georgia,serif" font-size="43">${highlight}</text>
+  <text x="540" y="990" text-anchor="middle" fill="#fff8ed" font-family="Georgia,serif" font-size="40">${highlight}</text>
   <text x="540" y="1088" text-anchor="middle" fill="#ffddd0" font-family="Arial,sans-serif" font-size="27">Nota média: ${escapeXml(rating)}  ·  Lugar especial: ${city}</text>
   <text x="540" y="1215" text-anchor="middle" fill="#f6c9c3" font-family="Georgia,serif" font-size="34" font-style="italic">As melhores memórias continuam sendo nossas.</text>
   <text x="540" y="1260" text-anchor="middle" fill="#f6c9c3" font-family="Arial,sans-serif" font-size="22" letter-spacing="4">memories</text>
