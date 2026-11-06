@@ -30,6 +30,8 @@ create trigger trg_couple_dreams_updated_at
   for each row execute function public.set_updated_at();
 
 -- Sempre gerenciar a data de conclusão no banco; não confiar no cliente.
+-- A policy UPDATE bloqueia is_deleted=true para clientes; a RPC autorizada
+-- pode marcar a exclusão, pois executa como proprietário da função.
 create function public.couple_dreams_guard()
 returns trigger language plpgsql set search_path = ''
 as $$
@@ -37,9 +39,7 @@ begin
   if tg_op = 'UPDATE' then
     if new.id is distinct from old.id
        or new.couple_id is distinct from old.couple_id
-       or new.created_by is distinct from old.created_by
-       or new.is_deleted is distinct from old.is_deleted
-       or new.deleted_at is distinct from old.deleted_at then
+       or new.created_by is distinct from old.created_by then
       raise exception 'Cannot transfer or physically delete a dream through UPDATE'
         using errcode = '42501';
     end if;
