@@ -5,6 +5,8 @@ import {
   Calendar,
   CalendarDays,
   MessagesSquare,
+  Compass,
+  BookHeart,
   Camera,
   Hash,
   Heart,
@@ -46,6 +48,16 @@ export default function HomePage() {
             <MessagesSquare className="size-6 text-primary mb-2" />
             <h2 className="font-display text-xl">Entre nós</h2>
             <p className="text-xs text-muted-foreground">Perguntas semanais e conversas do casal.</p>
+          </Link>
+          <Link href="/dreams" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <Compass className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Sonhos e planos</h2>
+            <p className="text-xs text-muted-foreground">Experiências que queremos viver juntos.</p>
+          </Link>
+          <Link href="/retrospectives" className="rounded-2xl border bg-card/70 p-5 transition hover:border-primary/40">
+            <BookHeart className="size-6 text-primary mb-2" />
+            <h2 className="font-display text-xl">Retrospectivas</h2>
+            <p className="text-xs text-muted-foreground">Resumos de meses e anos para guardar ou compartilhar.</p>
           </Link>
         </div>
 

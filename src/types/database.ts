@@ -20,6 +20,54 @@ export type Database = {
   };
   public: {
     Tables: {
+      couple_dreams: {
+        Row: {
+          id: string;
+          couple_id: string;
+          created_by: string;
+          title: string;
+          details: string | null;
+          category: "viagem" | "encontro" | "aventura" | "projeto" | "outro";
+          status: "sonho" | "planejado" | "realizado";
+          target_date: string | null;
+          completed_at: string | null;
+          is_deleted: boolean;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          couple_id: string;
+          created_by: string;
+          title: string;
+          details?: string | null;
+          category?: "viagem" | "encontro" | "aventura" | "projeto" | "outro";
+          status?: "sonho" | "planejado" | "realizado";
+          target_date?: string | null;
+          completed_at?: string | null;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          couple_id?: string;
+          created_by?: string;
+          title?: string;
+          details?: string | null;
+          category?: "viagem" | "encontro" | "aventura" | "projeto" | "outro";
+          status?: "sonho" | "planejado" | "realizado";
+          target_date?: string | null;
+          completed_at?: string | null;
+          is_deleted?: boolean;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       special_events: {
         Row: {
           id: string;
@@ -388,6 +436,7 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      soft_delete_couple_dream: { Args: { p_dream_id: string }; Returns: boolean };
       soft_delete_my_special_event: { Args: { p_event_id: string }; Returns: boolean };
       soft_delete_my_weekly_answer: { Args: { p_answer_id: string }; Returns: boolean };
       soft_delete_my_comment: { Args: { p_comment_id: string }; Returns: boolean };
@@ -433,3 +482,4 @@ export type NoteRow    = Tables<"notes">;
 export type SpecialEventRow = Tables<"special_events">;
 export type WeeklyAnswerRow = Tables<"weekly_answers">;
 export type CoupleCommentRow = Tables<"couple_comments">;
+export type CoupleDreamRow = Tables<"couple_dreams">;
