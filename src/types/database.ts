@@ -20,6 +20,24 @@ export type Database = {
   };
   public: {
     Tables: {
+      couples: {
+        Row: { id: string; created_by: string; created_at: string };
+        Insert: { id?: string; created_by: string; created_at?: string };
+        Update: { id?: string; created_by?: string; created_at?: string };
+        Relationships: [];
+      };
+      couple_members: {
+        Row: { couple_id: string; user_id: string; joined_at: string; share_previous: boolean };
+        Insert: { couple_id: string; user_id: string; joined_at?: string; share_previous?: boolean };
+        Update: { couple_id?: string; user_id?: string; joined_at?: string; share_previous?: boolean };
+        Relationships: [];
+      };
+      couple_invites: {
+        Row: { id: string; couple_id: string; created_by: string; token_hash: string; expires_at: string; accepted_by: string | null; accepted_at: string | null; revoked_at: string | null; created_at: string };
+        Insert: { id?: string; couple_id: string; created_by: string; token_hash: string; expires_at: string; accepted_by?: string | null; accepted_at?: string | null; revoked_at?: string | null; created_at?: string };
+        Update: { id?: string; couple_id?: string; created_by?: string; token_hash?: string; expires_at?: string; accepted_by?: string | null; accepted_at?: string | null; revoked_at?: string | null; created_at?: string };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -244,6 +262,9 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      create_my_couple: { Args: Record<string, never>; Returns: string };
+      issue_couple_invite: { Args: { p_token_hash: string }; Returns: string };
+      accept_couple_invite: { Args: { p_token_hash: string; p_share_previous: boolean }; Returns: string };
       create_date_with_relations: {
         Args: {
           p_title: string;
