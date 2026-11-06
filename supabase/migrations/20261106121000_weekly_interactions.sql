@@ -82,7 +82,7 @@ create or replace function public.can_reply_to_couple_comment(
   p_parent_id uuid, p_answer_id uuid, p_couple_id uuid
 )
 returns boolean language sql stable security definer set search_path = ''
-as $
+as $$
   select public.is_my_couple(p_couple_id) and exists (
     select 1 from public.couple_comments p
     where p.id = p_parent_id
@@ -91,7 +91,7 @@ as $
       and p.parent_id is null
       and p.is_deleted = false
   );
-$;
+$$;
 revoke all on function public.can_reply_to_couple_comment(uuid,uuid,uuid)
   from public, anon, authenticated;
 grant execute on function public.can_reply_to_couple_comment(uuid,uuid,uuid)
