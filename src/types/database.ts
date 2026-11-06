@@ -52,6 +52,8 @@ export type Database = {
       };
       dates: {
         Row: {
+          is_deleted: boolean;
+          deleted_at: string | null;
           id: string;
           user_id: string;
           title: string;
@@ -63,6 +65,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           user_id: string;
           title: string;
@@ -74,6 +78,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           user_id?: string;
           title?: string;
@@ -151,6 +157,8 @@ export type Database = {
       };
       notes: {
         Row: {
+          is_deleted: boolean;
+          deleted_at: string | null;
           id: string;
           user_id: string;
           content: string;
@@ -160,6 +168,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           user_id: string;
           content: string;
@@ -169,6 +179,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           user_id?: string;
           content?: string;
@@ -181,6 +193,8 @@ export type Database = {
       };
       photos: {
         Row: {
+          is_deleted: boolean;
+          deleted_at: string | null;
           id: string;
           date_id: string;
           storage_path: string;
@@ -192,6 +206,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           date_id: string;
           storage_path: string;
@@ -203,6 +219,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          is_deleted?: boolean;
+          deleted_at?: string | null;
           id?: string;
           date_id?: string;
           storage_path?: string;
