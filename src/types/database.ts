@@ -268,6 +268,9 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      soft_delete_my_note: { Args: { p_note_id: string }; Returns: boolean };
+      soft_delete_my_date: { Args: { p_date_id: string }; Returns: boolean };
+      soft_delete_my_photo: { Args: { p_photo_id: string }; Returns: boolean };
       create_my_couple: { Args: Record<string, never>; Returns: string };
       issue_couple_invite: { Args: { p_token_hash: string }; Returns: string };
       accept_couple_invite: { Args: { p_token_hash: string; p_share_previous: boolean }; Returns: string };
