@@ -56,8 +56,8 @@ export async function attachTag(input: {
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("date_tags")
-    .insert({ date_id: parsed.data.dateId, tag_id: parsed.data.tagId });
+     .from("date_tags")
+    .upsert({ date_id: parsed.data.dateId, tag_id: parsed.data.tagId, is_deleted: false, deleted_at: null }, { onConflict: "date_id,tag_id" });
 
   if (error && error.code !== "23505") {
     // 23505 = unique_violation. Idempotente, sem erro.
@@ -86,7 +86,7 @@ export async function detachTag(input: {
   const supabase = await createClient();
   const { error } = await supabase
     .from("date_tags")
-    .delete()
+    .update({ is_deleted: true, deleted_at: new Date().toISOString() })
     .eq("date_id", parsed.data.dateId)
     .eq("tag_id", parsed.data.tagId);
 
